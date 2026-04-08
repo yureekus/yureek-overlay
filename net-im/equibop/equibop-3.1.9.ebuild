@@ -9,10 +9,10 @@ HOMEPAGE="https://equicord.org https://github.com/Equicord/Equibop"
 
 SRC_URI="
 	https://github.com/Equicord/Equibop/archive/refs/tags/v${PV}.tar.gz -> ${P}.gh.tar.gz
-	amd64? ( https://github.com/Equicord/Equibop/releases/download/v${PV}/node_modules-x64.tar.gz -> ${P}-node_modules.tar.gz )
-	arm64? ( https://github.com/Equicord/Equibop/releases/download/v${PV}/node_modules-arm64.tar.gz -> ${P}-node_modules.tar.gz )
-	amd64? ( https://github.com/oven-sh/bun/releases/download/bun-v1.3.0/bun-linux-x64.zip -> ${P}-bun.zip )
-	arm64? ( https://github.com/oven-sh/bun/releases/download/bun-v1.3.0/bun-linux-aarch64.zip -> ${P}-bun.zip )
+	amd64? ( https://github.com/Equicord/Equibop/releases/download/v${PV}/node_modules-x64.tar.gz -> ${P}-node_modules-amd64.tar.gz )
+	arm64? ( https://github.com/Equicord/Equibop/releases/download/v${PV}/node_modules-arm64.tar.gz -> ${P}-node_modules-arm64.tar.gz )
+	amd64? ( https://github.com/oven-sh/bun/releases/download/bun-v1.3.0/bun-linux-x64.zip -> ${P}-bun-amd64.zip )
+	arm64? ( https://github.com/oven-sh/bun/releases/download/bun-v1.3.0/bun-linux-aarch64.zip -> ${P}-bun-arm64.zip )
 	https://github.com/Equicord/Equibop/releases/download/v${PV}/org.equicord.equibop.metainfo.xml -> ${P}.metainfo.xml
 "
 
@@ -47,8 +47,15 @@ QA_PREBUILT="
 src_unpack() {
 	default
 
+	local node_modules_dist
+	case ${ARCH} in
+		amd64) node_modules_dist="${P}-node_modules-amd64.tar.gz" ;;
+		arm64) node_modules_dist="${P}-node_modules-arm64.tar.gz" ;;
+		*) die "unsupported ARCH for node_modules bundle: ${ARCH}" ;;
+	esac
+
 	cd "${S}" || die
-	tar -xzf "${DISTDIR}/${P}-node_modules.tar.gz" || die "failed to unpack bundled node_modules"
+	tar -xzf "${DISTDIR}/${node_modules_dist}" || die "failed to unpack bundled node_modules"
 }
 
 src_compile() {

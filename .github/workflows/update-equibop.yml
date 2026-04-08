@@ -1,0 +1,37 @@
+name: Update Equibop
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 * * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update ebuild and manifest
+        run: |
+          chmod +x .github/scripts/bump-equibop.sh
+          .github/scripts/bump-equibop.sh
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "net-im/equibop: bump to latest upstream release"
+          title: "net-im/equibop: bump to latest upstream release"
+          body: |
+            Automated update for Equibop to the latest upstream release.
+
+            Changes include:
+            - versioned ebuild bump in net-im/equibop
+            - regenerated DIST hashes in Manifest
+          branch: automation/equibop-bump
+          delete-branch: true
