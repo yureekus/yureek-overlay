@@ -95,6 +95,11 @@ src_compile() {
 	"${flutter_cmd}" config --no-analytics >/dev/null 2>&1 || true
 
 	"${flutter_cmd}" pub get || die "flutter pub get failed"
+
+	# Remove -Werror from plugin CMakeLists to allow deprecated/uninitialized-variable
+	# warnings in third-party plugin C++ code (tray_manager, hotkey_manager_linux, etc.)
+	find "${PUB_CACHE}" -name "CMakeLists.txt" -exec sed -i 's/ -Werror\b//g; s/\b-Werror //g; s/\b-Werror\b//g' {} +
+
 	"${flutter_cmd}" build linux --release --verbose --dart-define="APP_ENV=stable" --dart-define="CORE_VERSION=${core_version}" || die "flutter build failed"
 
 	[[ -d "build/linux/${flutter_arch}/release/bundle" ]] || die "flutter bundle missing for ${flutter_arch}"
