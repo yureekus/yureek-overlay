@@ -10,6 +10,7 @@ XHOMO_COMMIT="b64d7d11580154979aec38b17fd1475393c4135f"
 SRC_URI="
 	https://github.com/pluralplay/FlClashX/archive/refs/tags/v${PV}.tar.gz -> ${P}.gh.tar.gz
 	https://github.com/pluralplay/xHomo/archive/${XHOMO_COMMIT}.tar.gz -> ${P}-xhomo-${XHOMO_COMMIT}.tar.gz
+	amd64? ( https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.41.6-stable.tar.xz -> ${P}-flutter-amd64.tar.xz )
 "
 
 S="${WORKDIR}/FlClashX-${PV}"
@@ -18,6 +19,7 @@ LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="amd64 ~arm64"
 IUSE="+gvisor suid"
+RESTRICT="network-sandbox"
 
 DEPEND="
 	dev-libs/glib:2
@@ -45,16 +47,18 @@ src_unpack() {
 }
 
 src_compile() {
-	local goarch flutter_arch core_version build_tags
+	local goarch flutter_arch core_version build_tags flutter_cmd
 
 	case ${ARCH} in
 		amd64)
 			goarch="amd64"
 			flutter_arch="x64"
+			flutter_cmd="${WORKDIR}/flutter/bin/flutter"
 			;;
 		arm64)
 			goarch="arm64"
 			flutter_arch="arm64"
+			flutter_cmd=$(command -v flutter || true)
 			;;
 		*) die "unsupported ARCH: ${ARCH}" ;;
 	esac
@@ -67,8 +71,14 @@ src_compile() {
 	[[ -n ${core_version} ]] || die "failed to detect Clash core version"
 
 	mkdir -p libclash/linux || die
+	export GOMODCACHE="${T}/go-mod-cache"
+	export GOPATH="${T}/go"
+	export GOCACHE="${T}/go-build-cache"
+	export GODEBUG="netdns=cgo"
+	mkdir -p "${GOMODCACHE}" "${GOPATH}" "${GOCACHE}" || die
 
 	pushd core >/dev/null || die
+	go mod download || die "go module download failed"
 	if [[ -n ${build_tags} ]]; then
 		GOOS=linux GOARCH="${goarch}" CGO_ENABLED=0 go build -ldflags='-w -s' -tags="${build_tags}" -o "${S}/libclash/linux/FlClashCore" || die "FlClashCore build failed"
 	else
@@ -78,11 +88,14 @@ src_compile() {
 
 	export HOME="${T}/home"
 	export PUB_CACHE="${T}/pub-cache"
+	export CI="true"
+	export FLUTTER_SUPPRESS_ANALYTICS="true"
 	mkdir -p "${HOME}" "${PUB_CACHE}" || die
-	command -v flutter >/dev/null || die "flutter executable not found in PATH; install Flutter SDK before building"
+	[[ -n ${flutter_cmd} && -x ${flutter_cmd} ]] || die "flutter executable not found; amd64 uses bundled SDK, arm64 currently requires flutter in PATH"
+	"${flutter_cmd}" config --no-analytics >/dev/null 2>&1 || true
 
-	flutter pub get || die "flutter pub get failed"
-	flutter build linux --release --verbose --dart-define="APP_ENV=stable" --dart-define="CORE_VERSION=${core_version}" || die "flutter build failed"
+	"${flutter_cmd}" pub get || die "flutter pub get failed"
+	"${flutter_cmd}" build linux --release --verbose --dart-define="APP_ENV=stable" --dart-define="CORE_VERSION=${core_version}" || die "flutter build failed"
 
 	[[ -d "build/linux/${flutter_arch}/release/bundle" ]] || die "flutter bundle missing for ${flutter_arch}"
 }

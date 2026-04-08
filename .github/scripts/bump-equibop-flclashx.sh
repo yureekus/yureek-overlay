@@ -6,6 +6,7 @@ cd "$repo_root"
 
 equibop_pkg_dir="net-im/equibop"
 flclashx_pkg_dir="net-proxy/flclashx"
+flutter_sdk_version="3.41.6"
 
 get_latest_release_tag() {
   local owner_repo=$1
@@ -123,6 +124,7 @@ update_flclashx() {
   manifest_tmp="$workdir/Manifest.flclashx"
   {
     fetch_and_hash "https://github.com/pluralplay/FlClashX/archive/refs/tags/v${latest_ver}.tar.gz" "flclashx-${latest_ver}.gh.tar.gz"
+    fetch_and_hash "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${flutter_sdk_version}-stable.tar.xz" "flclashx-${latest_ver}-flutter-amd64.tar.xz"
     fetch_and_hash "https://github.com/pluralplay/xHomo/archive/${xhomo_commit}.tar.gz" "flclashx-${latest_ver}-xhomo-${xhomo_commit}.tar.gz"
   } | sort > "$manifest_tmp"
 
