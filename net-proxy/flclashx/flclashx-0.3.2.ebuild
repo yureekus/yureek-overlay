@@ -114,17 +114,15 @@ src_compile() {
 
 	"${flutter_cmd}" pub get || die "flutter pub get failed"
 
-	# Remove -Werror from plugin CMakeLists to allow deprecated/uninitialized-variable
-	# warnings in third-party plugin C++ code (tray_manager, hotkey_manager_linux, etc.)
-	find "${PUB_CACHE}" -type f -name "CMakeLists.txt" \
+	# Strip -Werror from ALL plugin CMakeLists.txt across the entire build tree
+	# (pub-cache hosted packages + distfile path-overrides in WORKDIR) so that
+	# third-party warnings never become fatal errors regardless of compiler.
+	find "${WORKDIR}" "${PUB_CACHE}" -type f -name "CMakeLists.txt" \
 		-exec sed -i \
-			-e 's/[[:space:]]-Werror[[:space:]]/ /g' \
-			-e 's/[[:space:]]-Werror$//g' \
-			-e 's/^-Werror[[:space:]]//g' \
-			-e 's/^-Werror$//g' {} +
-
-	# Fallback for environments where some plugin build rules still inject -Werror.
-	export CXXFLAGS="${CXXFLAGS} -Wno-error=deprecated-declarations -Wno-error=sometimes-uninitialized"
+			-e 's/-Werror[[:space:]]/ /g' \
+			-e 's/-Werror$//g' \
+			-e 's/-Werror"/ "/g' \
+			-e 's/"-Werror/ "/g' {} +
 
 	"${flutter_cmd}" build linux --release --verbose --dart-define="APP_ENV=stable" --dart-define="CORE_VERSION=${core_version}" || die "flutter build failed"
 
