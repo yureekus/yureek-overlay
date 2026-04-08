@@ -7,7 +7,11 @@ cd "$repo_root"
 pkg_dir="net-im/equibop"
 
 latest_json=$(curl -fsSL "https://api.github.com/repos/Equicord/Equibop/releases/latest")
-latest_tag=$(printf '%s' "$latest_json" | grep -m1 '"tag_name"' | cut -d '"' -f4)
+if command -v jq >/dev/null 2>&1; then
+  latest_tag=$(jq -r '.tag_name' <<<"$latest_json")
+else
+  latest_tag=$(grep -m1 '"tag_name"' <<<"$latest_json" | cut -d '"' -f4)
+fi
 latest_ver=${latest_tag#v}
 
 current_ebuild=$(ls "$pkg_dir"/equibop-*.ebuild | sed 's#.*/equibop-##; s#\.ebuild##' | sort -V | tail -n1)
