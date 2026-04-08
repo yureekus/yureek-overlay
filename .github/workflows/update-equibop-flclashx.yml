@@ -3,7 +3,7 @@ name: Update Equibop and FlClashX
 on:
   workflow_dispatch:
   schedule:
-    - cron: "23 * * * *"
+    - cron: "0 0,12 * * *"
 
 permissions:
   contents: write

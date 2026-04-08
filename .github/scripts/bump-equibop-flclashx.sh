@@ -75,6 +75,12 @@ fetch_and_hash() {
   printf 'DIST %s %s BLAKE2B %s SHA512 %s\n' "$out" "$size" "$blake" "$sha512"
 }
 
+extract_ebuild_var() {
+  local ebuild_path=$1
+  local var_name=$2
+  sed -n "s/^${var_name}=\"\([0-9a-f]\+\)\"/\1/p" "$ebuild_path" | head -n1
+}
+
 update_equibop() {
   local latest_tag latest_ver current_ver manifest_tmp
 
@@ -105,6 +111,7 @@ update_equibop() {
 
 update_flclashx() {
   local latest_tag latest_ver current_ver xhomo_commit manifest_tmp ebuild_path
+  local re_editor_commit flutter_js_commit
 
   latest_tag=$(get_latest_release_tag "pluralplay/FlClashX")
   latest_ver=${latest_tag#v}
@@ -121,11 +128,18 @@ update_flclashx() {
   ebuild_path="${flclashx_pkg_dir}/flclashx-${latest_ver}.ebuild"
   sed -i -E "s/^XHOMO_COMMIT=\"[0-9a-f]+\"/XHOMO_COMMIT=\"${xhomo_commit}\"/" "$ebuild_path"
 
+  re_editor_commit=$(extract_ebuild_var "$ebuild_path" "RE_EDITOR_COMMIT")
+  flutter_js_commit=$(extract_ebuild_var "$ebuild_path" "FLUTTER_JS_COMMIT")
+  [[ -n "$re_editor_commit" ]] || { echo "RE_EDITOR_COMMIT missing in $ebuild_path" >&2; exit 1; }
+  [[ -n "$flutter_js_commit" ]] || { echo "FLUTTER_JS_COMMIT missing in $ebuild_path" >&2; exit 1; }
+
   manifest_tmp="$workdir/Manifest.flclashx"
   {
     fetch_and_hash "https://github.com/pluralplay/FlClashX/archive/refs/tags/v${latest_ver}.tar.gz" "flclashx-${latest_ver}.gh.tar.gz"
     fetch_and_hash "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${flutter_sdk_version}-stable.tar.xz" "flclashx-${latest_ver}-flutter-amd64.tar.xz"
     fetch_and_hash "https://github.com/pluralplay/xHomo/archive/${xhomo_commit}.tar.gz" "flclashx-${latest_ver}-xhomo-${xhomo_commit}.tar.gz"
+    fetch_and_hash "https://github.com/chen08209/re-editor/archive/${re_editor_commit}.tar.gz" "flclashx-${latest_ver}-re-editor-${re_editor_commit}.tar.gz"
+    fetch_and_hash "https://github.com/chen08209/flutter_js/archive/${flutter_js_commit}.tar.gz" "flclashx-${latest_ver}-flutter-js-${flutter_js_commit}.tar.gz"
   } | sort > "$manifest_tmp"
 
   mv "$manifest_tmp" "$flclashx_pkg_dir/Manifest"
