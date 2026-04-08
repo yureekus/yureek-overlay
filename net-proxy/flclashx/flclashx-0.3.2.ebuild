@@ -94,6 +94,9 @@ src_compile() {
 	export PUB_CACHE="${T}/pub-cache"
 	export CI="true"
 	export FLUTTER_SUPPRESS_ANALYTICS="true"
+	# Clang 21 promotes some third-party plugin warnings that break release
+	# builds because Flutter plugin CMake adds -Werror.
+	export CXXFLAGS+=" -Wno-error=deprecated-declarations -Wno-error=sometimes-uninitialized"
 	mkdir -p "${HOME}" "${PUB_CACHE}" || die
 	[[ -n ${flutter_cmd} && -x ${flutter_cmd} ]] || die "flutter executable not found; amd64 uses bundled SDK, arm64 currently requires flutter in PATH"
 	"${flutter_cmd}" config --no-analytics >/dev/null 2>&1 || true
