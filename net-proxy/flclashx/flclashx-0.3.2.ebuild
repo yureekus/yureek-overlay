@@ -16,7 +16,7 @@ S="${WORKDIR}/FlClashX-${PV}"
 
 LICENSE="GPL-3"
 SLOT="0"
-KEYWORDS="~amd64 ~arm64"
+KEYWORDS="amd64 ~arm64"
 IUSE="+gvisor suid"
 
 DEPEND="
@@ -28,7 +28,6 @@ DEPEND="
 RDEPEND="${DEPEND}"
 BDEPEND="
 	dev-lang/go
-	dev-util/flutter
 	virtual/pkgconfig
 "
 
@@ -80,6 +79,7 @@ src_compile() {
 	export HOME="${T}/home"
 	export PUB_CACHE="${T}/pub-cache"
 	mkdir -p "${HOME}" "${PUB_CACHE}" || die
+	command -v flutter >/dev/null || die "flutter executable not found in PATH; install Flutter SDK before building"
 
 	flutter pub get || die "flutter pub get failed"
 	flutter build linux --release --verbose --dart-define="APP_ENV=stable" --dart-define="CORE_VERSION=${core_version}" || die "flutter build failed"
