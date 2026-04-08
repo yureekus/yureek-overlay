@@ -114,10 +114,27 @@ src_compile() {
 
 	"${flutter_cmd}" pub get || die "flutter pub get failed"
 
-	# Bulletproof -Werror removal: match -Werror followed by any non-= char
-	# (space, quote, paren, etc.) or end-of-line. Preserves -Werror=<specific>.
-	find "${WORKDIR}" "${PUB_CACHE}" -type f -name "CMakeLists.txt" \
-		-exec sed -i -E 's/-Werror([^=]|$)/\1/g' {} +
+	# Create compiler wrappers that strip bare -Werror from all compiler
+	# invocations. This catches -Werror no matter how it is injected: cmake
+	# target_compile_options, add_compile_options, CMAKE_CXX_FLAGS, etc.
+	# Preserves -Werror=<specific> flags (e.g. -Werror=return-type).
+	local real_cc="${CC:-cc}" real_cxx="${CXX:-c++}"
+	mkdir -p "${T}/nowrap" || die
+	cat > "${T}/nowrap/cc-wrap" <<-WRAP || die
+	#!/usr/bin/env bash
+	a=()
+	for x in "\$@"; do [[ \$x == -Werror ]] || a+=("\$x"); done
+	exec ${real_cc} "\${a[@]}"
+	WRAP
+	cat > "${T}/nowrap/cxx-wrap" <<-WRAP || die
+	#!/usr/bin/env bash
+	a=()
+	for x in "\$@"; do [[ \$x == -Werror ]] || a+=("\$x"); done
+	exec ${real_cxx} "\${a[@]}"
+	WRAP
+	chmod +x "${T}/nowrap/cc-wrap" "${T}/nowrap/cxx-wrap" || die
+	export CC="${T}/nowrap/cc-wrap"
+	export CXX="${T}/nowrap/cxx-wrap"
 
 	"${flutter_cmd}" build linux --release --verbose --dart-define="APP_ENV=stable" --dart-define="CORE_VERSION=${core_version}" || die "flutter build failed"
 
