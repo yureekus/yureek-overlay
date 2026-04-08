@@ -94,15 +94,8 @@ src_compile() {
 	export PUB_CACHE="${T}/pub-cache"
 	export CI="true"
 	export FLUTTER_SUPPRESS_ANALYTICS="true"
-	# Third-party Flutter plugins trip -Werror on newer compilers.
-	# Use compiler-specific warning demotion flags so both clang and gcc work.
-	local cc_version
-	cc_version="$(${CC:-cc} --version 2>/dev/null | head -n1)"
-	if [[ ${cc_version} == *clang* ]]; then
-		export CXXFLAGS+=" -Wno-error=deprecated-declarations -Wno-error=sometimes-uninitialized"
-	else
-		export CXXFLAGS+=" -Wno-error=deprecated-declarations -Wno-error=maybe-uninitialized"
-	fi
+	# tray_manager uses deprecated appindicator API; keep it as warning.
+	export CXXFLAGS+=" -Wno-error=deprecated-declarations"
 	mkdir -p "${HOME}" "${PUB_CACHE}" || die
 	[[ -n ${flutter_cmd} && -x ${flutter_cmd} ]] || die "flutter executable not found; amd64 uses bundled SDK, arm64 currently requires flutter in PATH"
 	"${flutter_cmd}" config --no-analytics >/dev/null 2>&1 || true
@@ -122,6 +115,16 @@ src_compile() {
 	EOF
 
 	"${flutter_cmd}" pub get || die "flutter pub get failed"
+
+	# hotkey_manager_linux-0.2.0 triggers uninitialized warnings on modern
+	# compilers; initialize pointers to avoid -Werror build failures.
+	local hotkey_src="${PUB_CACHE}/hosted/pub.dev/hotkey_manager_linux-0.2.0/linux/hotkey_manager_linux_plugin.cc"
+	if [[ -f ${hotkey_src} ]]; then
+		sed -i \
+			-e 's/const char\* identifier;/const char* identifier = nullptr;/' \
+			-e 's/const char\* keystring;/const char* keystring = nullptr;/' \
+			"${hotkey_src}" || die "failed to patch hotkey_manager_linux plugin"
+	fi
 
 	# Create compiler wrappers that strip bare -Werror from all compiler
 	# invocations. This catches -Werror no matter how it is injected: cmake
