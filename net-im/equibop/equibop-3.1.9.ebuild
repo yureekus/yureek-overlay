@@ -31,8 +31,8 @@ RDEPEND="
 BDEPEND="
 	app-arch/unzip
 	net-libs/nodejs
+	source-libvesktop? ( dev-lang/python )
 	virtual/pkgconfig
-	virtual/python
 "
 
 QA_PREBUILT="
