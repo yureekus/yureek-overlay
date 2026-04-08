@@ -96,9 +96,9 @@ src_compile() {
 	export FLUTTER_SUPPRESS_ANALYTICS="true"
 	# Third-party Flutter plugins trip -Werror on newer compilers.
 	# Use compiler-specific warning demotion flags so both clang and gcc work.
-	local cxx_version
-	cxx_version="$(${CXX:-c++} --version 2>/dev/null | head -n1)"
-	if [[ ${cxx_version} == *clang* ]]; then
+	local cc_version
+	cc_version="$(${CC:-cc} --version 2>/dev/null | head -n1)"
+	if [[ ${cc_version} == *clang* ]]; then
 		export CXXFLAGS+=" -Wno-error=deprecated-declarations -Wno-error=sometimes-uninitialized"
 	else
 		export CXXFLAGS+=" -Wno-error=deprecated-declarations -Wno-error=maybe-uninitialized"
