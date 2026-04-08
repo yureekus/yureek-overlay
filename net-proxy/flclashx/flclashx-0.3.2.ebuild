@@ -114,15 +114,10 @@ src_compile() {
 
 	"${flutter_cmd}" pub get || die "flutter pub get failed"
 
-	# Strip -Werror from ALL plugin CMakeLists.txt across the entire build tree
-	# (pub-cache hosted packages + distfile path-overrides in WORKDIR) so that
-	# third-party warnings never become fatal errors regardless of compiler.
+	# Bulletproof -Werror removal: match -Werror followed by any non-= char
+	# (space, quote, paren, etc.) or end-of-line. Preserves -Werror=<specific>.
 	find "${WORKDIR}" "${PUB_CACHE}" -type f -name "CMakeLists.txt" \
-		-exec sed -i \
-			-e 's/-Werror[[:space:]]/ /g' \
-			-e 's/-Werror$//g' \
-			-e 's/-Werror"/ "/g' \
-			-e 's/"-Werror/ "/g' {} +
+		-exec sed -i -E 's/-Werror([^=]|$)/\1/g' {} +
 
 	"${flutter_cmd}" build linux --release --verbose --dart-define="APP_ENV=stable" --dart-define="CORE_VERSION=${core_version}" || die "flutter build failed"
 
