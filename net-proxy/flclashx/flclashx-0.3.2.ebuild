@@ -6,10 +6,14 @@ DESCRIPTION="Flutter-based Clash.Meta GUI client (FlClashX)"
 HOMEPAGE="https://github.com/pluralplay/FlClashX"
 
 XHOMO_COMMIT="b64d7d11580154979aec38b17fd1475393c4135f"
+RE_EDITOR_COMMIT="7cda330fc33d5ef9e00333048b70ce65a5f5d550"
+FLUTTER_JS_COMMIT="c0e10a5dab0e22cd616ec92ae71471d76369cbfe"
 
 SRC_URI="
 	https://github.com/pluralplay/FlClashX/archive/refs/tags/v${PV}.tar.gz -> ${P}.gh.tar.gz
 	https://github.com/pluralplay/xHomo/archive/${XHOMO_COMMIT}.tar.gz -> ${P}-xhomo-${XHOMO_COMMIT}.tar.gz
+	https://github.com/chen08209/re-editor/archive/${RE_EDITOR_COMMIT}.tar.gz -> ${P}-re-editor-${RE_EDITOR_COMMIT}.tar.gz
+	https://github.com/chen08209/flutter_js/archive/${FLUTTER_JS_COMMIT}.tar.gz -> ${P}-flutter-js-${FLUTTER_JS_COMMIT}.tar.gz
 	amd64? ( https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.41.6-stable.tar.xz -> ${P}-flutter-amd64.tar.xz )
 "
 
@@ -93,6 +97,18 @@ src_compile() {
 	mkdir -p "${HOME}" "${PUB_CACHE}" || die
 	[[ -n ${flutter_cmd} && -x ${flutter_cmd} ]] || die "flutter executable not found; amd64 uses bundled SDK, arm64 currently requires flutter in PATH"
 	"${flutter_cmd}" config --no-analytics >/dev/null 2>&1 || true
+
+	# Pre-populate the pub git cache from distfile tarballs so flutter pub get
+	# does not need to git-clone re_editor or flutter_js from the network.
+	# pub uses ${PUB_CACHE}/git/<pkg>-<resolved-sha>/ as a checkout cache;
+	# if the directory exists it is used as-is without re-cloning.
+	local re_editor_dir="${PUB_CACHE}/git/re_editor-${RE_EDITOR_COMMIT}"
+	local flutter_js_dir="${PUB_CACHE}/git/flutter_js-${FLUTTER_JS_COMMIT}"
+	mkdir -p "${re_editor_dir}" "${flutter_js_dir}" || die
+	tar -xzf "${DISTDIR}/${P}-re-editor-${RE_EDITOR_COMMIT}.tar.gz" \
+		--strip-components=1 -C "${re_editor_dir}" || die "failed to unpack re_editor"
+	tar -xzf "${DISTDIR}/${P}-flutter-js-${FLUTTER_JS_COMMIT}.tar.gz" \
+		--strip-components=1 -C "${flutter_js_dir}" || die "failed to unpack flutter_js"
 
 	"${flutter_cmd}" pub get || die "flutter pub get failed"
 
