@@ -1,4 +1,4 @@
-name: Update Equibop
+name: Update Equibop and FlClashX
 
 on:
   workflow_dispatch:
@@ -21,8 +21,8 @@ jobs:
 
       - name: Update ebuild and manifest
         run: |
-          chmod +x .github/scripts/bump-equibop.sh
-          .github/scripts/bump-equibop.sh
+          chmod +x .github/scripts/bump-equibop-flclashx.sh
+          .github/scripts/bump-equibop-flclashx.sh
 
       - name: Commit and push directly to main
         run: |
@@ -34,7 +34,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add net-im/equibop
-          git commit -m "net-im/equibop: bump to latest upstream release"
+          git add net-im/equibop net-proxy/flclashx
+          git commit -m "overlay: bump Equibop and FlClashX to latest upstream releases"
           git pull --rebase origin main
           git push origin HEAD:main

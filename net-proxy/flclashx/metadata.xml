@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+  <longdescription lang="en">
+    FlClashX is a Flutter-based graphical client for Clash.Meta.
+  </longdescription>
+  <use>
+    <flag name="gvisor">Build FlClashCore with gVisor support (with_gvisor Go build tag).</flag>
+    <flag name="suid">Install FlClashCore setuid-root for privileged TUN-related operations.</flag>
+  </use>
+  <upstream>
+    <remote-id type="github">pluralplay/FlClashX</remote-id>
+  </upstream>
+</pkgmetadata>
