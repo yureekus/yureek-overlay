@@ -116,7 +116,15 @@ src_compile() {
 
 	# Remove -Werror from plugin CMakeLists to allow deprecated/uninitialized-variable
 	# warnings in third-party plugin C++ code (tray_manager, hotkey_manager_linux, etc.)
-	find "${PUB_CACHE}" -name "CMakeLists.txt" -exec sed -i 's/ -Werror\b//g; s/\b-Werror //g; s/\b-Werror\b//g' {} +
+	find "${PUB_CACHE}" -type f -name "CMakeLists.txt" \
+		-exec sed -i \
+			-e 's/[[:space:]]-Werror[[:space:]]/ /g' \
+			-e 's/[[:space:]]-Werror$//g' \
+			-e 's/^-Werror[[:space:]]//g' \
+			-e 's/^-Werror$//g' {} +
+
+	# Fallback for environments where some plugin build rules still inject -Werror.
+	export CXXFLAGS="${CXXFLAGS} -Wno-error=deprecated-declarations -Wno-error=sometimes-uninitialized"
 
 	"${flutter_cmd}" build linux --release --verbose --dart-define="APP_ENV=stable" --dart-define="CORE_VERSION=${core_version}" || die "flutter build failed"
 
