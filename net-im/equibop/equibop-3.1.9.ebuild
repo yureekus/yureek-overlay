@@ -27,6 +27,7 @@ DEPEND="
 "
 RDEPEND="
 	${DEPEND}
+	arrpc? ( app-misc/arrpc-bun )
 "
 BDEPEND="
 	app-arch/unzip
@@ -79,19 +80,13 @@ src_compile() {
 		popd >/dev/null || die
 	fi
 
-	if use arrpc; then
-		bun run compileArrpc || die "arRPC build failed"
-	fi
-
 	bun run build || die "application build failed"
 
 	if ! use venmic; then
 		rm -f static/dist/venmic-*.node || die
 	fi
 
-	if ! use arrpc; then
-		rm -f static/dist/arrpc-* || die
-	fi
+	rm -f static/dist/arrpc-* || die
 }
 
 src_install() {
@@ -101,14 +96,6 @@ src_install() {
 	if use bundled-electron; then
 		insinto /opt/${PN}/electron
 		doins -r node_modules/electron/dist/*
-	fi
-
-	if [[ -f "${ED}/opt/${PN}/static/dist/arrpc-linux-x64" ]]; then
-		fperms 0755 /opt/${PN}/static/dist/arrpc-linux-x64
-	fi
-
-	if [[ -f "${ED}/opt/${PN}/static/dist/arrpc-linux-arm64" ]]; then
-		fperms 0755 /opt/${PN}/static/dist/arrpc-linux-arm64
 	fi
 
 	if use bundled-electron; then
@@ -153,8 +140,10 @@ pkg_postinst() {
 		ewarn "bundled-electron is disabled; you need an 'electron' or 'electron-40' executable in PATH at runtime."
 	fi
 
-	if ! use arrpc; then
-		einfo "The bundled arRPC helper was not installed because the arrpc USE flag is disabled."
+	if use arrpc; then
+		einfo "arRPC support is provided by app-misc/arrpc-bun."
+	else
+		einfo "arRPC support is disabled because the arrpc USE flag is off."
 	fi
 
 	if ! use venmic; then

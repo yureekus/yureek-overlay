@@ -21,7 +21,6 @@ jobs:
 
       - name: Update ebuild and manifest
         run: |
-          chmod +x .github/scripts/bump-equibop-flclashx.sh
           .github/scripts/bump-equibop-flclashx.sh
 
       - name: Commit and push directly to main
