@@ -5,7 +5,7 @@
     Equibop is an Equicord-maintained desktop Discord client based on Electron.
   </longdescription>
   <use>
-    <flag name="arrpc">Build and install the bundled arRPC helper binary for Discord Rich Presence bridging.</flag>
+    <flag name="arrpc">Install the arRPC helper for Discord Rich Presence bridging.</flag>
     <flag name="bundled-electron">Install the Electron runtime shipped in the upstream node_modules bundle instead of relying on a system Electron executable.</flag>
     <flag name="source-libvesktop">Build the Linux libvesktop native helper locally instead of using the upstream prebuilt binary fallback.</flag>
     <flag name="venmic">Install the optional venmic native module for virtual microphone support on Linux.</flag>

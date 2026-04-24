@@ -27,7 +27,7 @@ DEPEND="
 "
 RDEPEND="
 	${DEPEND}
-	arrpc? ( app-misc/arrpc-bun )
+	arrpc? ( >=app-misc/arrpc-bun-1.3.6 )
 "
 BDEPEND="
 	app-arch/unzip

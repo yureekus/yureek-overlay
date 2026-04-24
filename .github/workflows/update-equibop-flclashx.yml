@@ -1,4 +1,4 @@
-name: Update Equibop and FlClashX
+name: Update Equibop, arRPC, and FlClashX
 
 on:
   workflow_dispatch:
@@ -33,7 +33,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add net-im/equibop net-proxy/flclashx
-          git commit -m "overlay: bump Equibop and FlClashX to latest upstream releases"
+          git add app-misc/arrpc-bun net-im/equibop net-proxy/flclashx
+          git commit -m "overlay: bump Equibop, arRPC, and FlClashX to latest upstream releases"
           git pull --rebase origin main
           git push origin HEAD:main

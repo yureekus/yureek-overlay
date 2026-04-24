@@ -6,6 +6,7 @@ cd "$repo_root"
 
 equibop_pkg_dir="net-im/equibop"
 flclashx_pkg_dir="net-proxy/flclashx"
+arrpc_bun_pkg_dir="app-misc/arrpc-bun"
 flutter_sdk_version="3.41.6"
 
 get_latest_release_tag() {
@@ -20,6 +21,20 @@ get_latest_release_tag() {
   fi
 
   printf '%s\n' "$latest_tag"
+}
+
+get_latest_npm_version() {
+  local package_name=$1
+  local package_json latest_version
+
+  package_json=$(curl -fsSL "https://registry.npmjs.org/${package_name}/latest")
+  if command -v jq >/dev/null 2>&1; then
+    latest_version=$(jq -r '.version' <<<"$package_json")
+  else
+    latest_version=$(grep -m1 '"version"' <<<"$package_json" | cut -d '"' -f4)
+  fi
+
+  printf '%s\n' "$latest_version"
 }
 
 get_tree_entry_sha() {
@@ -151,8 +166,33 @@ update_flclashx() {
   fi
 }
 
+update_arrpc_bun() {
+  local latest_ver current_ver manifest_tmp
+
+  latest_ver=$(get_latest_npm_version "arrpc-bun")
+
+  current_ver=$(current_ebuild_version "$arrpc_bun_pkg_dir" arrpc-bun)
+  replace_or_create_ebuild "$arrpc_bun_pkg_dir" arrpc-bun "$current_ver" "$latest_ver"
+
+  manifest_tmp="$workdir/Manifest.arrpc-bun"
+  {
+    fetch_and_hash "https://registry.npmjs.org/arrpc-bun/-/arrpc-bun-${latest_ver}.tgz" "arrpc-bun-${latest_ver}.tgz"
+    fetch_and_hash "https://github.com/oven-sh/bun/releases/download/bun-v1.3.0/bun-linux-aarch64.zip" "bun-linux-aarch64.zip"
+    fetch_and_hash "https://github.com/oven-sh/bun/releases/download/bun-v1.3.0/bun-linux-x64.zip" "bun-linux-x64.zip"
+  } | sort > "$manifest_tmp"
+
+  mv "$manifest_tmp" "$arrpc_bun_pkg_dir/Manifest"
+
+  if [[ "$latest_ver" == "$current_ver" ]]; then
+    echo "arrpc-bun already on ${latest_ver}; Manifest refreshed"
+  else
+    echo "Updated arrpc-bun to ${latest_ver}"
+  fi
+}
+
 workdir=$(mktemp -d)
 trap 'rm -rf "$workdir"' EXIT
 
+update_arrpc_bun
 update_equibop
 update_flclashx
