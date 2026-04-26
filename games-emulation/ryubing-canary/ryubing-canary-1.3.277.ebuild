@@ -77,7 +77,6 @@ src_prepare() {
 		die "failed to remove bundled libsoundio dependency"
 
 	rm -f \
-		src/ARMeilleure/Native/libs/libarmeilleure-jitsupport.dylib \
 		src/Ryujinx.Audio.Backends.SoundIo/Native/libsoundio/libs/libsoundio.so ||
 		die "failed to remove unused bundled native libraries"
 
@@ -128,6 +127,9 @@ src_compile() {
 		-maxCpuCount:$(makeopts_jobs) \
 		"${build_args[@]}" \
 		src/Ryujinx/Ryujinx.csproj || die "dotnet build failed"
+
+	rm -f "${DOTNET_PKG_OUTPUT}/libarmeilleure-jitsupport.dylib" ||
+		die "failed to remove unused macOS JIT helper"
 }
 
 src_install() {
