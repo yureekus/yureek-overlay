@@ -7,6 +7,7 @@ cd "$repo_root"
 equibop_pkg_dir="net-im/equibop"
 flclashx_pkg_dir="net-proxy/flclashx"
 arrpc_bun_pkg_dir="app-misc/arrpc-bun"
+ryubing_canary_pkg_dir="games-emulation/ryubing-canary"
 flutter_sdk_version="3.41.6"
 
 get_latest_release_tag() {
@@ -17,7 +18,7 @@ get_latest_release_tag() {
   if command -v jq >/dev/null 2>&1; then
     latest_tag=$(jq -r '.tag_name' <<<"$latest_json")
   else
-    latest_tag=$(grep -m1 '"tag_name"' <<<"$latest_json" | cut -d '"' -f4)
+    latest_tag=$(sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]\+\)".*/\1/p' <<<"$latest_json" | head -n1)
   fi
 
   printf '%s\n' "$latest_tag"
@@ -31,10 +32,39 @@ get_latest_npm_version() {
   if command -v jq >/dev/null 2>&1; then
     latest_version=$(jq -r '.version' <<<"$package_json")
   else
-    latest_version=$(grep -m1 '"version"' <<<"$package_json" | cut -d '"' -f4)
+    latest_version=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]\+\)".*/\1/p' <<<"$package_json" | head -n1)
   fi
 
   printf '%s\n' "$latest_version"
+}
+
+get_latest_forgejo_release_tag() {
+  local owner_repo=$1
+  local latest_json latest_tag
+
+  latest_json=$(curl -fsSL "https://git.ryujinx.app/api/v1/repos/${owner_repo}/releases/latest")
+  if command -v jq >/dev/null 2>&1; then
+    latest_tag=$(jq -r '.tag_name' <<<"$latest_json")
+  else
+    latest_tag=$(sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]\+\)".*/\1/p' <<<"$latest_json" | head -n1)
+  fi
+
+  printf '%s\n' "$latest_tag"
+}
+
+get_forgejo_tag_commit_sha() {
+  local owner_repo=$1
+  local tag=$2
+  local tag_json commit_sha
+
+  tag_json=$(curl -fsSL "https://git.ryujinx.app/api/v1/repos/${owner_repo}/tags/${tag}")
+  if command -v jq >/dev/null 2>&1; then
+    commit_sha=$(jq -r '.commit.sha' <<<"$tag_json")
+  else
+    commit_sha=$(sed -n 's/.*"commit":{[^}]*"sha":"\([0-9a-f]\+\)".*/\1/p' <<<"$tag_json" | head -n1)
+  fi
+
+  printf '%s\n' "$commit_sha"
 }
 
 get_tree_entry_sha() {
@@ -190,9 +220,42 @@ update_arrpc_bun() {
   fi
 }
 
+update_ryubing_canary() {
+  local latest_tag latest_ver current_ver source_commit manifest_tmp ebuild_path
+
+  latest_tag=$(get_latest_forgejo_release_tag "Ryubing/Canary")
+  latest_ver=${latest_tag#v}
+
+  current_ver=$(current_ebuild_version "$ryubing_canary_pkg_dir" ryubing-canary)
+  replace_or_create_ebuild "$ryubing_canary_pkg_dir" ryubing-canary "$current_ver" "$latest_ver"
+
+  source_commit=$(get_forgejo_tag_commit_sha "projects/Ryubing" "Canary-${latest_ver}")
+  if [[ -z "$source_commit" || "$source_commit" == "null" ]]; then
+    echo "Failed to resolve Ryubing source commit for Canary-${latest_ver}" >&2
+    exit 1
+  fi
+
+  ebuild_path="${ryubing_canary_pkg_dir}/ryubing-canary-${latest_ver}.ebuild"
+  sed -i -E "s/^RYUBING_COMMIT=\"[0-9a-f]+\"/RYUBING_COMMIT=\"${source_commit}\"/" "$ebuild_path"
+
+  manifest_tmp="$workdir/Manifest.ryubing-canary"
+  {
+    fetch_and_hash "https://git.ryujinx.app/projects/Ryubing/archive/Canary-${latest_ver}.tar.gz" "ryubing-canary-${latest_ver}.tar.gz"
+  } | sort > "$manifest_tmp"
+
+  mv "$manifest_tmp" "$ryubing_canary_pkg_dir/Manifest"
+
+  if [[ "$latest_ver" == "$current_ver" ]]; then
+    echo "Ryubing Canary already on ${latest_ver}; Manifest refreshed"
+  else
+    echo "Updated Ryubing Canary to ${latest_ver}"
+  fi
+}
+
 workdir=$(mktemp -d)
 trap 'rm -rf "$workdir"' EXIT
 
 update_arrpc_bun
 update_equibop
 update_flclashx
+update_ryubing_canary

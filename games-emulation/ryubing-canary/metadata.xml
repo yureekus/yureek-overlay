@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+  <longdescription lang="en">
+    Ryubing Canary is the fast-moving Canary channel of the Ryubing-maintained
+    Ryujinx Nintendo Switch emulator.
+  </longdescription>
+  <use>
+    <flag name="desktop">Install the desktop entry and application icon.</flag>
+    <flag name="gamemode">Prefer launching through games-util/gamemode when available.</flag>
+    <flag name="mime">Install MIME associations for Nintendo Switch content file types.</flag>
+    <flag name="updater">Enable the upstream in-app updater instead of forcing Portage-managed updates.</flag>
+  </use>
+  <upstream>
+    <bugs-to>https://git.ryujinx.app/projects/Ryubing/issues</bugs-to>
+  </upstream>
+</pkgmetadata>
