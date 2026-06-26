@@ -7,7 +7,7 @@ inherit desktop dotnet-pkg-base xdg
 DESCRIPTION="Canary builds of the Ryujinx Nintendo Switch emulator from the Ryubing project"
 HOMEPAGE="https://git.ryujinx.app/projects/Ryubing https://www.ryujinxcanary.org"
 
-RYUBING_COMMIT="c2e0cf2fd586c6ef93ee52162214b44f0b87b51a"
+RYUBING_COMMIT="a5f72136b27ed6f9fa827c49da7e5e2e9bede67a"
 
 SRC_URI="https://git.ryujinx.app/projects/Ryubing/archive/Canary-${PV}.tar.gz -> ${P}.tar.gz"
 S="${WORKDIR}/ryubing"
